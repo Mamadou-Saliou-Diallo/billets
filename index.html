@@ -3,13 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Billets Tournoi PDF - Scan Compact</title>
+<title>Billets Tournoi PDF - Scan Multi</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jsqr/dist/jsQR.js"></script>
 <style>
-  /* Caméra de scan taille QR code */
   video {
     width: 100px;
     height: 100px;
@@ -24,7 +23,7 @@
 </head>
 <body class="p-3">
 <div class="container">
-<h2>Billets Tournoi - PDF Design Officiel + Scan Compact</h2>
+<h2>Billets Tournoi - PDF Design Officiel + Scan Multi</h2>
 
 <ul class="nav nav-tabs">
   <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#emetteur">Émetteur</button></li>
@@ -59,7 +58,7 @@ const usedList = document.getElementById('usedList');
 let stream = null;
 let scanInterval = null;
 
-// --- localStorage billets utilisés ---
+// --- Gestion billets utilisés ---
 function getUsed(){ return JSON.parse(localStorage.getItem('usedTickets')||'[]'); }
 function markUsed(id){
   const arr = getUsed();
@@ -73,7 +72,7 @@ function renderUsed(){
 }
 renderUsed();
 
-// --- Génération PDF avec design officiel ---
+// --- Génération PDF ---
 async function generatePDF(qty){
   const { jsPDF } = window.jspdf;
   tickets = [];
@@ -116,7 +115,7 @@ async function generatePDF(qty){
     // QR code centré
     pdf.addImage(canvas.toDataURL('image/png'), 'PNG', rectX + rectW/2 - 50, rectY + 10, 100, 100);
 
-    // Texte centré dans le billet
+    // Texte centré
     pdf.setFontSize(12);
     pdf.setTextColor(0);
     const maxWidth = rectW - 10;
@@ -136,13 +135,15 @@ document.getElementById('genPDF').addEventListener('click', ()=>{
   generatePDF(qty);
 });
 
-// --- Scanner QR code compact ---
+// --- Scanner QR code multi ---
 document.getElementById('startCam').addEventListener('click', async ()=>{
   stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment', width:100, height:100}});
   video.srcObject = stream; video.play();
   document.getElementById('startCam').disabled=true;
   document.getElementById('stopCam').disabled=false;
-  const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d');
+
+  const canvas = document.createElement('canvas'); 
+  const ctx = canvas.getContext('2d');
 
   scanInterval = setInterval(()=>{
     if(video.readyState!==video.HAVE_ENOUGH_DATA) return;
@@ -151,7 +152,9 @@ document.getElementById('startCam').addEventListener('click', async ()=>{
     ctx.drawImage(video,0,0,canvas.width,canvas.height);
     const imageData = ctx.getImageData(0,0,canvas.width,canvas.height);
     const code = jsQR(imageData.data, canvas.width, canvas.height);
-    if(code) handleScan(code.data);
+    if(code){
+      handleScan(code.data);
+    }
   },200);
 });
 
@@ -163,6 +166,7 @@ document.getElementById('stopCam').addEventListener('click', ()=>{
   document.getElementById('stopCam').disabled=true;
 });
 
+// --- Gestion scan ---
 function handleScan(data){
   if(!tickets.includes(data)){
     resultDiv.innerHTML='<span style="color:red">Billet invalide !</span>';
@@ -174,6 +178,7 @@ function handleScan(data){
   }
   markUsed(data);
   resultDiv.innerHTML='<span style="color:green">Billet accepté !</span>';
+  // Ne pas stopper le scan, continuer à scanner d'autres billets
 }
 </script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
