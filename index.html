@@ -3,18 +3,28 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Billets Tournoi PDF - Design Officiel</title>
+<title>Billets Tournoi PDF - Scan Compact</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jsqr/dist/jsQR.js"></script>
 <style>
-  video { width:100%; border:1px solid #ccc; border-radius:6px; margin-top:10px; }
+  /* Caméra de scan taille QR code */
+  video {
+    width: 100px;
+    height: 100px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    display: block;
+    margin-top: 10px;
+    margin-left: auto;
+    margin-right: auto;
+  }
 </style>
 </head>
 <body class="p-3">
 <div class="container">
-<h2>Billets Tournoi - PDF Design Officiel</h2>
+<h2>Billets Tournoi - PDF Design Officiel + Scan Compact</h2>
 
 <ul class="nav nav-tabs">
   <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#emetteur">Émetteur</button></li>
@@ -33,7 +43,7 @@
     <button class="btn btn-primary mb-2" id="startCam">Démarrer caméra</button>
     <button class="btn btn-secondary mb-2" id="stopCam" disabled>Arrêter caméra</button>
     <video id="video"></video>
-    <div id="result" class="mt-2"></div>
+    <div id="result" class="mt-2 text-center"></div>
     <h5 class="mt-3">Billets déjà utilisés :</h5>
     <ul id="usedList"></ul>
   </div>
@@ -41,7 +51,7 @@
 </div>
 
 <script>
-const TOURNAMENT_NAME = "Tournois Termessé 3 -ème Edition";
+const TOURNAMENT_NAME = "Tournois Termessé 2 -ème Edition";
 let tickets = [];
 const video = document.getElementById('video');
 const resultDiv = document.getElementById('result');
@@ -63,7 +73,7 @@ function renderUsed(){
 }
 renderUsed();
 
-// --- Génération PDF avec design officiel et texte dans le cadre ---
+// --- Génération PDF avec design officiel ---
 async function generatePDF(qty){
   const { jsPDF } = window.jspdf;
   tickets = [];
@@ -85,34 +95,28 @@ async function generatePDF(qty){
 
     // QR code
     const canvas = document.createElement('canvas');
-    await QRCode.toCanvas(canvas, ticketText, {width:100});
+    await QRCode.toCanvas(canvas, ticketText, {width:100, height:100});
 
     const col = count % cols;
     const row = Math.floor(count / cols) % rows;
     const x = margin + col*cellWidth;
     const y = margin + row*cellHeight;
 
-    // Dimensions billet
     const rectX = x + 5;
     const rectY = y + 5;
     const rectW = cellWidth - 10;
     const rectH = cellHeight - 10;
 
-    // Fond coloré léger
-    pdf.setFillColor(240, 248, 255); // bleu très clair
+    // Fond et bordure
+    pdf.setFillColor(240, 248, 255);
     pdf.roundedRect(rectX, rectY, rectW, rectH, 10, 10, 'F');
-
-    // Bordure
     pdf.setDrawColor(0);
     pdf.roundedRect(rectX, rectY, rectW, rectH, 10, 10, 'S');
 
-    // Ajouter QR code centré horizontalement
-    const qrX = rectX + rectW/2 - 50;
-    const qrY = rectY + 10;
-    const imgData = canvas.toDataURL('image/png');
-    pdf.addImage(imgData, 'PNG', qrX, qrY, 100, 100);
+    // QR code centré
+    pdf.addImage(canvas.toDataURL('image/png'), 'PNG', rectX + rectW/2 - 50, rectY + 10, 100, 100);
 
-    // Ajouter texte avec retour à la ligne automatique et centré
+    // Texte centré dans le billet
     pdf.setFontSize(12);
     pdf.setTextColor(0);
     const maxWidth = rectW - 10;
@@ -132,9 +136,9 @@ document.getElementById('genPDF').addEventListener('click', ()=>{
   generatePDF(qty);
 });
 
-// --- Scanner QR code ---
+// --- Scanner QR code compact ---
 document.getElementById('startCam').addEventListener('click', async ()=>{
-  stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
+  stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment', width:100, height:100}});
   video.srcObject = stream; video.play();
   document.getElementById('startCam').disabled=true;
   document.getElementById('stopCam').disabled=false;
@@ -142,8 +146,8 @@ document.getElementById('startCam').addEventListener('click', async ()=>{
 
   scanInterval = setInterval(()=>{
     if(video.readyState!==video.HAVE_ENOUGH_DATA) return;
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
+    canvas.width = 100;
+    canvas.height = 100;
     ctx.drawImage(video,0,0,canvas.width,canvas.height);
     const imageData = ctx.getImageData(0,0,canvas.width,canvas.height);
     const code = jsQR(imageData.data, canvas.width, canvas.height);
@@ -153,7 +157,7 @@ document.getElementById('startCam').addEventListener('click', async ()=>{
 
 document.getElementById('stopCam').addEventListener('click', ()=>{
   clearInterval(scanInterval);
-  stream.getTracks().forEach(t=>t.stop());
+  if(stream) stream.getTracks().forEach(t=>t.stop());
   video.srcObject=null;
   document.getElementById('startCam').disabled=false;
   document.getElementById('stopCam').disabled=true;
