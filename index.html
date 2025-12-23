@@ -14,6 +14,18 @@ video { width:100%; max-width:400px; height:auto; border:3px solid #198754; bord
 #result { font-size:1.8rem; font-weight:bold; text-align:center; margin-top:10px; }
 .counter-box { background:#fff; border-radius:10px; box-shadow:0 2px 5px rgba(0,0,0,0.1); padding:15px; margin-top:15px; }
 
+/* Phrase du tournoi visible sur la page */
+#tournamentTitle {
+  text-align:center;
+  font-weight:bold;
+  font-size:1.5rem;
+  color:#198754; /* vert foncé */
+  margin-bottom:20px;
+}
+@media(max-width:576px){
+  #tournamentTitle { font-size:1.2rem; }
+}
+
 /* Popup codes avec animation */
 #accessPopup { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; opacity:0; transition:opacity 0.3s ease-in-out; }
 #accessPopup.show { display:block; opacity:1; }
@@ -25,7 +37,10 @@ video { width:100%; max-width:400px; height:auto; border:3px solid #198754; bord
 <body class="p-3">
 
 <div class="container">
-  <h2 class="text-center mb-4 text-success fw-bold">🎟️ Tournoi ARTD - 3ème Édition</h2>
+  <h2 class="text-center mb-2 text-success fw-bold">🎟️ Tournoi ARTD - 3ème Édition</h2>
+  
+  <!-- Phrase visible sur la page -->
+  <div id="tournamentTitle">SM: KWR vs LSR 25/12/2025</div>
 
   <ul class="nav nav-tabs justify-content-center">
     <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#emetteur">Émetteur</button></li>
@@ -84,9 +99,11 @@ video { width:100%; max-width:400px; height:auto; border:3px solid #198754; bord
 <audio id="codeError" src="https://actions.google.com/sounds/v1/cartoon/boing.ogg"></audio>
 
 <script>
+// --- Codes d'accès ---
 const ACCESS_CODES = { pdf:"ARTD2025", reset:"RESET2025", csv:"CSV2025" };
-const TOURNAMENT_NAME = " ARTD: 1 000 F - le 21/12/2025";
+const TOURNAMENT_NAME = "SM: KWR vs LSR 25/12/2025";
 
+// --- Variables scanner ---
 const video = document.getElementById('video');
 const resultDiv = document.getElementById('result');
 const usedList = document.getElementById('usedList');
@@ -124,7 +141,7 @@ function renderUsed(){
 }
 renderUsed();
 
-// --- Popup fonctionnel ---
+// --- Popup ---
 function showAccessPopup(type){
   return new Promise((resolve)=>{
     const popup = document.getElementById('accessPopup');
@@ -187,12 +204,24 @@ async function generatePDF(qty){
     const x = margin + col*cellW;
     const y = margin + row*cellH;
 
+    // Fond du billet
     pdf.setFillColor(245,255,250);
     pdf.roundedRect(x+5,y+5,cellW-10,cellH-10,10,10,'F');
     pdf.roundedRect(x+5,y+5,cellW-10,cellH-10,10,10,'S');
+
+    // QR Code
     pdf.addImage(canvas.toDataURL('image/png'),'PNG',x+cellW/2-50,y+20,100,100);
+
+    // Nom tournoi en vert foncé et gras
     pdf.setFontSize(12);
-    pdf.text(ticketText,x+cellW/2,y+cellH-30,{align:"center"});
+    pdf.setFont("helvetica","bold");
+    pdf.setTextColor(25,135,84);
+    pdf.text(TOURNAMENT_NAME, x+cellW/2, y+cellH-35, {align:"center"});
+
+    // Numéro du billet
+    pdf.setFont("helvetica","normal");
+    pdf.setTextColor(0,0,0);
+    pdf.text(`Billet #${i}`, x+cellW/2, y+cellH-20, {align:"center"});
 
     count++;
     if(count % (cols*rows) === 0 && i<qty){ pdf.addPage(); count=0; }
