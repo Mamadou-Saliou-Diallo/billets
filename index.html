@@ -40,7 +40,12 @@ video { width:100%; max-width:400px; height:auto; border:3px solid #198754; bord
   <h2 class="text-center mb-2 text-success fw-bold">🎟️ Tournoi ARTD - 3ème Édition</h2>
   
   <!-- Phrase visible sur la page -->
-  <div id="tournamentTitle">SM: KWR vs LSR 25/12/2025</div>
+<input 
+  type="text" 
+  id="tournamentTitle" 
+  class="form-control text-center fw-bold text-success mb-3"
+  value="ARTD: 1 000 F / 28/12/2025"
+/>
 
   <ul class="nav nav-tabs justify-content-center">
     <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#emetteur">Émetteur</button></li>
@@ -101,7 +106,10 @@ video { width:100%; max-width:400px; height:auto; border:3px solid #198754; bord
 <script>
 // --- Codes d'accès ---
 const ACCESS_CODES = { pdf:"ARTD2025", reset:"RESET2025", csv:"CSV2025" };
-const TOURNAMENT_NAME = "SM: KWR vs LSR 25/12/2025";
+function getTournamentName(){
+  return document.getElementById('tournamentTitle').value.trim();
+}
+
 
 // --- Variables scanner ---
 const video = document.getElementById('video');
@@ -196,7 +204,7 @@ async function generatePDF(qty){
   let count = 0;
 
   for(let i=1;i<=qty;i++){
-    const ticketText = `${TOURNAMENT_NAME} - Billet #${i}`;
+    const ticketText = `${getTournamentName()} - Billet #${i}`;
     const canvas = document.createElement('canvas');
     await QRCode.toCanvas(canvas, ticketText, {width:100, height:100});
     const col = count % cols;
@@ -216,8 +224,7 @@ async function generatePDF(qty){
     pdf.setFontSize(12);
     pdf.setFont("helvetica","bold");
     pdf.setTextColor(25,135,84);
-    pdf.text(TOURNAMENT_NAME, x+cellW/2, y+cellH-35, {align:"center"});
-
+  pdf.text(getTournamentName(), x+cellW/2, y+cellH-35, {align:"center"});
     // Numéro du billet
     pdf.setFont("helvetica","normal");
     pdf.setTextColor(0,0,0);
