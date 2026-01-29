@@ -13,20 +13,7 @@ body { background: #f8f9fa; }
 video { width:100%; max-width:400px; height:auto; border:3px solid #198754; border-radius:10px; display:block; margin:10px auto; object-fit:cover; }
 #result { font-size:1.8rem; font-weight:bold; text-align:center; margin-top:10px; }
 .counter-box { background:#fff; border-radius:10px; box-shadow:0 2px 5px rgba(0,0,0,0.1); padding:15px; margin-top:15px; }
-
-/* Phrase du tournoi visible sur la page */
-#tournamentTitle {
-  text-align:center;
-  font-weight:bold;
-  font-size:1.5rem;
-  color:#198754; /* vert foncé */
-  margin-bottom:20px;
-}
-@media(max-width:576px){
-  #tournamentTitle { font-size:1.2rem; }
-}
-
-/* Popup codes avec animation */
+#tournamentTitle { text-align:center; font-weight:bold; font-size:1.5rem; color:#198754; margin-bottom:20px; }
 #accessPopup { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; opacity:0; transition:opacity 0.3s ease-in-out; }
 #accessPopup.show { display:block; opacity:1; }
 #accessPopup .popup-content { background:#fff; padding:20px; border-radius:10px; width:300px; max-width:90%; margin:100px auto; text-align:center; box-shadow:0 4px 10px rgba(0,0,0,0.3); transform:translateY(-50px); transition:transform 0.3s ease-in-out; }
@@ -34,18 +21,18 @@ video { width:100%; max-width:400px; height:auto; border:3px solid #198754; bord
 #accessPopup input { width:80%; margin-bottom:10px; }
 </style>
 </head>
+
 <body class="p-3">
 
 <div class="container">
   <h2 class="text-center mb-2 text-success fw-bold">🎟️ Tournoi ARTD - 3ème Édition</h2>
   
-  <!-- Phrase visible sur la page -->
-<input 
-  type="text" 
-  id="tournamentTitle" 
-  class="form-control text-center fw-bold text-success mb-3"
-  value="ARTD: 1 000 F / 04/01/2026"
-/>
+  <input 
+    type="text" 
+    id="tournamentTitle" 
+    class="form-control text-center fw-bold text-success mb-3"
+    value="ARTD: 1 000 F / 01/02/2026"
+  />
 
   <ul class="nav nav-tabs justify-content-center">
     <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#emetteur">Émetteur</button></li>
@@ -86,7 +73,6 @@ video { width:100%; max-width:400px; height:auto; border:3px solid #198754; bord
   </div>
 </div>
 
-<!-- Popup code -->
 <div id="accessPopup">
   <div class="popup-content">
     <h5>🔐 Code d’accès requis</h5>
@@ -98,20 +84,19 @@ video { width:100%; max-width:400px; height:auto; border:3px solid #198754; bord
   </div>
 </div>
 
-<!-- Sons -->
 <audio id="successSound" src="https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg"></audio>
 <audio id="codeSuccess" src="https://actions.google.com/sounds/v1/cartoon/ting.ogg"></audio>
 <audio id="codeError" src="https://actions.google.com/sounds/v1/cartoon/boing.ogg"></audio>
 
 <script>
-// --- Codes d'accès ---
+/* ===== Codes d'accès ===== */
 const ACCESS_CODES = { pdf:"ARTD2025", reset:"RESET2025", csv:"CSV2025" };
-function getTournamentName(){
-  return document.getElementById('tournamentTitle').value.trim();
-}
+function getTournamentName(){ return document.getElementById('tournamentTitle').value.trim(); }
 
+/* ===== SÉRIE ===== */
+const TICKET_SERIE = "ARTD-A";
 
-// --- Variables scanner ---
+/* ===== Variables scanner ===== */
 const video = document.getElementById('video');
 const resultDiv = document.getElementById('result');
 const usedList = document.getElementById('usedList');
@@ -149,7 +134,7 @@ function renderUsed(){
 }
 renderUsed();
 
-// --- Popup ---
+/* ===== Popup ===== */
 function showAccessPopup(type){
   return new Promise((resolve)=>{
     const popup = document.getElementById('accessPopup');
@@ -185,7 +170,7 @@ function showAccessPopup(type){
   });
 }
 
-// --- PDF ---
+/* ===== PDF ===== */
 document.getElementById('genPDF').addEventListener('click', async ()=>{
   if(!(await showAccessPopup("pdf"))) return;
   const qty = parseInt(document.getElementById('qty').value || 20);
@@ -204,7 +189,7 @@ async function generatePDF(qty){
   let count = 0;
 
   for(let i=1;i<=qty;i++){
-    const ticketText = `${getTournamentName()} - Billet #${i}`;
+    const ticketText = `${TICKET_SERIE} - Billet #${i}`;
     const canvas = document.createElement('canvas');
     await QRCode.toCanvas(canvas, ticketText, {width:100, height:100});
     const col = count % cols;
@@ -212,23 +197,21 @@ async function generatePDF(qty){
     const x = margin + col*cellW;
     const y = margin + row*cellH;
 
-    // Fond du billet
-    pdf.setFillColor(245,255,250);
+    /* ===== FOND PLUS VISIBLE ===== */
+    pdf.setFillColor(180, 230, 180); // plus intense
     pdf.roundedRect(x+5,y+5,cellW-10,cellH-10,10,10,'F');
     pdf.roundedRect(x+5,y+5,cellW-10,cellH-10,10,10,'S');
 
-    // QR Code
     pdf.addImage(canvas.toDataURL('image/png'),'PNG',x+cellW/2-50,y+20,100,100);
 
-    // Nom tournoi en vert foncé et gras
+    pdf.setFontSize(10);
+    pdf.setTextColor(80,80,80);
+    pdf.text(`Série : ${TICKET_SERIE}`, x+cellW/2, y+cellH-45, {align:"center"});
+
     pdf.setFontSize(12);
-    pdf.setFont("helvetica","bold");
-    pdf.setTextColor(25,135,84);
-  pdf.text(getTournamentName(), x+cellW/2, y+cellH-35, {align:"center"});
-    // Numéro du billet
     pdf.setFont("helvetica","normal");
     pdf.setTextColor(0,0,0);
-    pdf.text(`Billet #${i}`, x+cellW/2, y+cellH-20, {align:"center"});
+    pdf.text(`Billet #${i}`, x+cellW/2, y+cellH-25, {align:"center"});
 
     count++;
     if(count % (cols*rows) === 0 && i<qty){ pdf.addPage(); count=0; }
@@ -236,32 +219,7 @@ async function generatePDF(qty){
   pdf.save('billets_tournoi.pdf');
 }
 
-// --- Reset ---
-document.getElementById('resetUsed').addEventListener('click', async ()=>{
-  if(!(await showAccessPopup("reset"))) return;
-  if(confirm("Voulez-vous effacer tout l'historique ?")){
-    localStorage.removeItem('usedTickets');
-    renderUsed();
-    resultDiv.textContent='';
-    alert("✅ Historique réinitialisé !");
-  }
-});
-
-// --- Export CSV ---
-document.getElementById('exportCSV').addEventListener('click', async ()=>{
-  if(!(await showAccessPopup("csv"))) return;
-  const arr = getUsed();
-  if(arr.length===0){ alert("Aucun billet scanné"); return; }
-  const rows = ["Numéro,Statut,Date/Heure"];
-  arr.forEach(t=> rows.push(`${t.num},${t.status},${t.time}`));
-  const blob = new Blob([rows.join('\n')], {type:'text/csv'});
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'historique_scans.csv';
-  a.click();
-});
-
-// --- Scanner QR ---
+/* ===== Scanner QR ===== */
 document.getElementById('startCam').addEventListener('click', async ()=>{
   try{
     stream = await navigator.mediaDevices.getUserMedia({ video:{ facingMode:'environment' } });
@@ -292,7 +250,6 @@ document.getElementById('stopCam').addEventListener('click', ()=>{
   document.getElementById('stopCam').disabled=true;
 });
 
-// --- Validation QR ---
 function handleScan(data){
   resultDiv.className="mt-2 text-center fw-bold";
   const match = data.match(/Billet #(\d+)/);
