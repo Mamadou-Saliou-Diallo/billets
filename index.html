@@ -89,14 +89,9 @@ video { width:100%; max-width:400px; height:auto; border:3px solid #198754; bord
 <audio id="codeError" src="https://actions.google.com/sounds/v1/cartoon/boing.ogg"></audio>
 
 <script>
-/* ===== Codes d'accès ===== */
 const ACCESS_CODES = { pdf:"ARTD2025", reset:"RESET2025", csv:"CSV2025" };
 function getTournamentName(){ return document.getElementById('tournamentTitle').value.trim(); }
 
-/* ===== SÉRIE ===== */
-const TICKET_SERIE = "ARTD-A";
-
-/* ===== Variables scanner ===== */
 const video = document.getElementById('video');
 const resultDiv = document.getElementById('result');
 const usedList = document.getElementById('usedList');
@@ -134,7 +129,6 @@ function renderUsed(){
 }
 renderUsed();
 
-/* ===== Popup ===== */
 function showAccessPopup(type){
   return new Promise((resolve)=>{
     const popup = document.getElementById('accessPopup');
@@ -170,7 +164,6 @@ function showAccessPopup(type){
   });
 }
 
-/* ===== PDF ===== */
 document.getElementById('genPDF').addEventListener('click', async ()=>{
   if(!(await showAccessPopup("pdf"))) return;
   const qty = parseInt(document.getElementById('qty').value || 20);
@@ -189,7 +182,11 @@ async function generatePDF(qty){
   let count = 0;
 
   for(let i=1;i<=qty;i++){
-    const ticketText = `${TICKET_SERIE} - Billet #${i}`;
+    // Série automatique toutes les 50 billets
+    const serieChar = String.fromCharCode(65 + Math.floor((i-1)/50)); // 65 = A
+    const ticketSerie = `ARTD-${serieChar}`;
+    const ticketText = `${ticketSerie} - Billet #${i}`;
+
     const canvas = document.createElement('canvas');
     await QRCode.toCanvas(canvas, ticketText, {width:100, height:100});
     const col = count % cols;
@@ -197,8 +194,7 @@ async function generatePDF(qty){
     const x = margin + col*cellW;
     const y = margin + row*cellH;
 
-    /* ===== FOND PLUS VISIBLE ===== */
-    pdf.setFillColor(180, 230, 180); // plus intense
+    pdf.setFillColor(180, 230, 180);
     pdf.roundedRect(x+5,y+5,cellW-10,cellH-10,10,10,'F');
     pdf.roundedRect(x+5,y+5,cellW-10,cellH-10,10,10,'S');
 
@@ -206,7 +202,7 @@ async function generatePDF(qty){
 
     pdf.setFontSize(10);
     pdf.setTextColor(80,80,80);
-    pdf.text(`Série : ${TICKET_SERIE}`, x+cellW/2, y+cellH-45, {align:"center"});
+    pdf.text(`Série : ${ticketSerie}`, x+cellW/2, y+cellH-45, {align:"center"});
 
     pdf.setFontSize(12);
     pdf.setFont("helvetica","normal");
@@ -219,7 +215,6 @@ async function generatePDF(qty){
   pdf.save('billets_tournoi.pdf');
 }
 
-/* ===== Scanner QR ===== */
 document.getElementById('startCam').addEventListener('click', async ()=>{
   try{
     stream = await navigator.mediaDevices.getUserMedia({ video:{ facingMode:'environment' } });
@@ -274,6 +269,29 @@ function handleScan(data){
   resultDiv.textContent=`✅ Billet #${num} confirmé`;
   document.getElementById('successSound').play();
 }
+
+document.getElementById('resetUsed').addEventListener('click', async ()=>{
+  if(!(await showAccessPopup("reset"))) return;
+  if(confirm("Voulez-vous effacer tout l'historique ?")){
+    localStorage.removeItem('usedTickets');
+    renderUsed();
+    resultDiv.textContent='';
+    alert("✅ Historique réinitialisé !");
+  }
+});
+
+document.getElementById('exportCSV').addEventListener('click', async ()=>{
+  if(!(await showAccessPopup("csv"))) return;
+  const arr = getUsed();
+  if(arr.length===0){ alert("Aucun billet scanné"); return; }
+  const rows = ["Numéro,Statut,Date/Heure"];
+  arr.forEach(t=> rows.push(`${t.num},${t.status},${t.time}`));
+  const blob = new Blob([rows.join('\n')], {type:'text/csv'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'historique_scans.csv';
+  a.click();
+});
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
